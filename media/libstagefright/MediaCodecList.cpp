@@ -77,7 +77,7 @@ MediaCodecList::MediaCodecList()
 #endif
     }
 
-#if 0
+#if 1
     for (size_t i = 0; i < mCodecInfos.size(); ++i) {
         const CodecInfo &info = mCodecInfos.itemAt(i);
 
