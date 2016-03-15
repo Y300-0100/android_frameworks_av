@@ -416,6 +416,9 @@ uint32_t OMXCodec::getComponentQuirks(
     if (info->hasQuirk("requires-global-flush")) {
         quirks |= kRequiresGlobalFlush;
     }
+    if (info->hasQuirk("defers-output-buffer-allocation"))  {
+        quirks |= kDefersOutputBufferAllocation;
+    }
 
 #ifdef ENABLE_AV_ENHANCEMENTS
     quirks |= ExtendedCodec::getComponentQuirks(info);
