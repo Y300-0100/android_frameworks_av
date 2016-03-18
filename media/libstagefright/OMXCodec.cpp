@@ -416,9 +416,14 @@ uint32_t OMXCodec::getComponentQuirks(
     if (info->hasQuirk("requires-global-flush")) {
         quirks |= kRequiresGlobalFlush;
     }
+#ifdef SPRD_HARDWARE
     if (info->hasQuirk("defers-output-buffer-allocation"))  {
         quirks |= kDefersOutputBufferAllocation;
     }
+    if (info->hasQuirk("needs-flush-before-disable")) {
+        quirks |= kNeedsFlushBeforeDisable;
+    }
+#endif
 
 #ifdef ENABLE_AV_ENHANCEMENTS
     quirks |= ExtendedCodec::getComponentQuirks(info);
@@ -1654,6 +1659,8 @@ status_t OMXCodec::setVideoOutputFormat(
         compressionFormat = OMX_VIDEO_CodingVP9;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_MPEG2, mime)) {
         compressionFormat = OMX_VIDEO_CodingMPEG2;
+    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_MJPG, mime)) {
+        compressionFormat = OMX_VIDEO_CodingMJPEG;
     } else {
         status_t err = ERROR_UNSUPPORTED;
 #ifdef ENABLE_AV_ENHANCEMENTS
@@ -1921,6 +1928,8 @@ void OMXCodec::setComponentRole(
             "audio_decoder.flac", "audio_encoder.flac" },
         { MEDIA_MIMETYPE_AUDIO_MSGSM,
             "audio_decoder.gsm", "audio_encoder.gsm" },
+        { MEDIA_MIMETYPE_AUDIO_APE,
+            "audio_decoder.ape", "audio_encoder.ape" },
         { MEDIA_MIMETYPE_VIDEO_MPEG2,
             "video_decoder.mpeg2", "video_encoder.mpeg2" },
         { MEDIA_MIMETYPE_AUDIO_AC3,
@@ -2302,11 +2311,30 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
             frameHeight,
             def.format.video.eColorFormat);
 #else
+#if defined(SPRD_HARDWARE)
+    OMX_COLOR_FORMATTYPE eColorFormat;
+
+    switch (def.format.video.eColorFormat) {
+    case OMX_COLOR_FormatYUV420SemiPlanar:
+        eColorFormat = (OMX_COLOR_FORMATTYPE) HAL_PIXEL_FORMAT_YCbCr_420_SP;
+        break;
+    default:
+        eColorFormat = def.format.video.eColorFormat;
+        break;
+    }
+
+    err = native_window_set_buffers_geometry(
+            mNativeWindow.get(),
+            def.format.video.nFrameWidth,
+            def.format.video.nFrameHeight,
+            eColorFormat);
+#else
     err = native_window_set_buffers_geometry(
             mNativeWindow.get(),
             def.format.video.nFrameWidth,
             def.format.video.nFrameHeight,
             def.format.video.eColorFormat);
+#endif /* SPRD_HARDWARE */
 #endif
 
     if (err != 0) {
@@ -4361,6 +4389,42 @@ void OMXCodec::setG711Format(int32_t numChannels) {
     CHECK(!mIsEncoder);
     setRawAudioFormat(kPortIndexInput, 8000, numChannels);
 }
+
+void OMXCodec::setIMAADPCMFormat(int32_t numChannels, int32_t sampleRate, int32_t blockAlign) {
+    CHECK(!mIsEncoder);
+
+    // port definition
+    OMX_PARAM_PORTDEFINITIONTYPE def;
+    InitOMXParams(&def);
+    def.nPortIndex = kPortIndexInput;
+    status_t err = mOMX->getParameter(
+            mNode, OMX_IndexParamPortDefinition, &def, sizeof(def));
+    CHECK_EQ(err, (status_t)OK);
+    def.format.audio.eEncoding = OMX_AUDIO_CodingIMAADPCM;
+    CHECK_EQ(mOMX->setParameter(mNode, OMX_IndexParamPortDefinition,
+            &def, sizeof(def)), (status_t)OK);
+
+    // pcm param
+    OMX_AUDIO_PARAM_IMAADPCMTYPE imaadpcmParams;
+    InitOMXParams(&imaadpcmParams);
+    imaadpcmParams.nPortIndex = kPortIndexInput;
+
+    err = mOMX->getParameter(
+            mNode, OMX_IndexParamAudioImaAdpcm, &imaadpcmParams, sizeof(imaadpcmParams));
+
+    CHECK_EQ(err, (status_t)OK);
+
+    imaadpcmParams.nChannels = numChannels;
+    imaadpcmParams.nBitsPerSample = 4;
+    imaadpcmParams.nSampleRate = sampleRate;
+    imaadpcmParams.nBlockAlign = blockAlign;
+
+    err = mOMX->setParameter(
+            mNode, OMX_IndexParamAudioImaAdpcm, &imaadpcmParams, sizeof(imaadpcmParams));
+
+    CHECK_EQ(err, (status_t)OK);
+}
+
 
 void OMXCodec::setImageOutputFormat(
         OMX_COLOR_FORMATTYPE format, OMX_U32 width, OMX_U32 height) {
