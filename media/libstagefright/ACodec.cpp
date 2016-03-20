@@ -41,7 +41,9 @@
 #include <OMX_Component.h>
 
 #ifdef USE_SAMSUNG_COLORFORMAT
+#ifndef SPRD_HARDWARE
 #include <sec_format.h>
+#endif
 #endif
 
 #ifdef USE_TI_CUSTOM_DOMX

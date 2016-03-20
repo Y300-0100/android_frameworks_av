@@ -66,7 +66,9 @@
 #endif
 
 #ifdef USE_SAMSUNG_COLORFORMAT
+#ifndef SPRD_HARDWARE
 #include <sec_format.h>
+#endif
 #endif
 
 #ifdef USE_TI_CUSTOM_DOMX
@@ -2438,9 +2440,11 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
     OMX_COLOR_FORMATTYPE eColorFormat;
 
     switch (def.format.video.eColorFormat) {
+#ifndef SPRD_HARDWARE
     case OMX_SEC_COLOR_FormatNV12TPhysicalAddress:
         eColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_CUSTOM_YCbCr_420_SP_TILED;
         break;
+#endif
     case OMX_COLOR_FormatYUV420SemiPlanar:
         eColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YCbCr_420_SP;
         break;
