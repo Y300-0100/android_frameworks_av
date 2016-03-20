@@ -93,7 +93,9 @@
 #include "include/ExtendedUtils.h"
 
 #ifdef USE_SAMSUNG_COLORFORMAT
+#ifndef SPRD_HARDWARE
 #include <sec_format.h>
+#endif
 #endif
 
 #include "include/avc_utils.h"
@@ -1053,6 +1055,10 @@ void ACodec::setNativeWindowColorFormat(OMX_COLOR_FORMATTYPE &eNativeColorFormat
     if (!strcasecmp(mComponentName.c_str(), "OMX.SEC.AVC.Decoder")
         || !strcasecmp(mComponentName.c_str(), "OMX.SEC.FP.AVC.Decoder")
         || !strcasecmp(mComponentName.c_str(), "OMX.SEC.MPEG4.Decoder")
+        || !strcasecmp(mComponentName.c_str(), "OMX.sprd.mpeg4.decoder")
+        || !strcasecmp(mComponentName.c_str(), "OMX.sprd.h263.decoder")
+        || !strcasecmp(mComponentName.c_str(), "OMX.sprd.h264.decoder")
+        || !strcasecmp(mComponentName.c_str(), "OMX.sprd.vpx.decoder")
         || !strcasecmp(mComponentName.c_str(), "OMX.Exynos.AVC.Decoder")) {
         switch (eNativeColorFormat) {
             case OMX_COLOR_FormatYUV420SemiPlanar:

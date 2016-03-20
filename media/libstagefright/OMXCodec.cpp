@@ -116,7 +116,9 @@
 #endif
 
 #ifdef USE_SAMSUNG_COLORFORMAT
+#ifndef SPRD_HARDWARE
 #include <sec_format.h>
+#endif
 #endif
 
 #ifdef USE_S3D_SUPPORT
@@ -417,9 +419,6 @@ uint32_t OMXCodec::getComponentQuirks(
         quirks |= kRequiresGlobalFlush;
     }
 #ifdef SPRD_HARDWARE
-    if (info->hasQuirk("defers-output-buffer-allocation"))  {
-        quirks |= kDefersOutputBufferAllocation;
-    }
     if (info->hasQuirk("needs-flush-before-disable")) {
         quirks |= kNeedsFlushBeforeDisable;
     }
@@ -2311,30 +2310,11 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
             frameHeight,
             def.format.video.eColorFormat);
 #else
-#if defined(SPRD_HARDWARE)
-    OMX_COLOR_FORMATTYPE eColorFormat;
-
-    switch (def.format.video.eColorFormat) {
-    case OMX_COLOR_FormatYUV420SemiPlanar:
-        eColorFormat = (OMX_COLOR_FORMATTYPE) HAL_PIXEL_FORMAT_YCbCr_420_SP;
-        break;
-    default:
-        eColorFormat = def.format.video.eColorFormat;
-        break;
-    }
-
-    err = native_window_set_buffers_geometry(
-            mNativeWindow.get(),
-            def.format.video.nFrameWidth,
-            def.format.video.nFrameHeight,
-            eColorFormat);
-#else
     err = native_window_set_buffers_geometry(
             mNativeWindow.get(),
             def.format.video.nFrameWidth,
             def.format.video.nFrameHeight,
             def.format.video.eColorFormat);
-#endif /* SPRD_HARDWARE */
 #endif
 
     if (err != 0) {
@@ -2540,9 +2520,11 @@ void OMXCodec::setNativeWindowColorFormat(OMX_COLOR_FORMATTYPE &eNativeColorForm
     // Convert OpenMAX color format to native color format
     switch (eNativeColorFormat) {
         // In case of SAMSUNG color format
+#ifndef SPRD_HARDWARE
         case OMX_SEC_COLOR_FormatNV12TPhysicalAddress:
             eNativeColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_CUSTOM_YCbCr_420_SP_TILED;
             break;
+#endif
         case OMX_SEC_COLOR_FormatNV12Tiled:
             eNativeColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YCbCr_420_SP_TILED;
             break;
