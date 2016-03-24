@@ -300,8 +300,6 @@ private:
 
     void setG711Format(int32_t numChannels);
 
-    void setIMAADPCMFormat(int32_t numChannels, int32_t sampleRate, int32_t blockAlign);
-
     status_t setVideoPortFormatType(
             OMX_U32 portIndex,
             OMX_VIDEO_CODINGTYPE compressionFormat,
